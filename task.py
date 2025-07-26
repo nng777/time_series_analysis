@@ -1,33 +1,68 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import yfinance as yf
 import argparse
+from json import JSONDecodeError
 
-"""try:
+try:  # noqa: WPS433 - optional import guard
+    import requests
+except ImportError as exc:  # pragma: no cover - clearer error for missing deps
+    raise SystemExit(
+        "The 'requests' package is required to run this script. Install it via pip"
+    ) from exc
+try:  # noqa: WPS433 - allow optional import guard
+    import pandas as pd
+except ImportError as exc:  # pragma: no cover - clearer error for missing deps
+    raise SystemExit(
+        "The 'pandas' package is required to run this script. Install it via pip"
+    ) from exc
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError as exc:  # pragma: no cover - clearer error for missing deps
+    raise SystemExit(
+        "The 'matplotlib' package is required to run this script. Install it via pip"
+    ) from exc
+
+try:
     import yfinance as yf
-except ImportError:
+except ImportError as exc:  # pragma: no cover - clearer error for missing deps
     raise SystemExit(
         "The 'yfinance' package is required to run this script. Install it via pip"
-    )
-"""
+    ) from exc
 
-def fetch_stock_data(symbol: str, period: str = "1mo") -> pd.DataFrame:
-    """Download recent stock prices for the given symbol."""
+
+
+def fetch_stock_data(
+    symbol: str,
+    period: str = "1mo",
+    start: str | None = None,
+    end: str | None = None,
+) -> pd.DataFrame:
+    """Return recent stock prices for ``symbol`` using ``yfinance``.
+
+    Either ``period`` or explicit ``start`` and ``end`` dates may be provided.
+    Dates should be in the ``YYYY-MM-DD`` format.
+    """
+
     try:
-        tickers = yf.Tickers(symbol)
-        ticker = tickers.tickers.get(symbol)
-        if ticker is None:
-            raise ValueError(f"Symbol '{symbol}' not recognized")
-        df = ticker.history(period=period)
-    except Exception as exc:  # covers network issues and invalid symbols
+        if start or end:
+            df = yf.download(
+                symbol,
+                start=start,
+                end=end,
+                progress=False,
+                threads=False,
+            )
+        else:
+            df = yf.download(symbol, period=period, progress=False, threads=False)
+    except (requests.exceptions.RequestException, JSONDecodeError, ValueError) as exc:
         raise SystemExit(
-            f"Failed to get ticker '{symbol}' reason: {exc}"
-        )
+            f"Could not retrieve data for {symbol}: {exc}. "
+            "Check your internet connection or ticker symbol."
+        ) from exc
 
     if df.empty:
         raise SystemExit(
-            f"{symbol}: No price data found, symbol may be delisted (period={period})"
-            " or network unavailable"
+            f"No data fetched for {symbol}. "
+            "Check your internet connection or verify the ticker symbol."
         )
 
     return df
@@ -52,12 +87,28 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Plot stock closing prices and forecast next value")
     parser.add_argument("symbol", nargs="?", default="MSFT", help="Stock ticker symbol")
     parser.add_argument("--period", default="1mo", help="Period to download, e.g. 1mo or 3mo")
+    parser.add_argument(
+        "--start",
+        default="2025-01-01",
+        help="Explicit start date YYYY-MM-DD",
+    )
+    parser.add_argument(
+        "--end",
+        default="2025-06-01",
+        help="Explicit end date YYYY-MM-DD",
+    )
     parser.add_argument("--window", type=int, default=7, help="Moving average window")
     return parser.parse_args()
 
 
-def main(symbol: str = "MSFT", window: int = 7, period: str = "1mo") -> None:
-    df = fetch_stock_data(symbol, period=period)
+def main(
+    symbol: str = "MSFT",
+    window: int = 7,
+    period: str = "1mo",
+    start: str | None = "2025-01-01",
+    end: str | None = "2025-06-01",
+) -> None:
+    df = fetch_stock_data(symbol, period=period, start=start, end=end)
 
     close_series = df["Close"]
     ma_series = close_series.rolling(window=window).mean()
@@ -72,4 +123,10 @@ def main(symbol: str = "MSFT", window: int = 7, period: str = "1mo") -> None:
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.symbol, window=args.window, period=args.period)
+    main(
+        args.symbol,
+        window=args.window,
+        period=args.period,
+        start=args.start,
+        end=args.end,
+    )
