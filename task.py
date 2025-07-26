@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
+import argparse
 
 """try:
     import yfinance as yf
@@ -11,22 +12,22 @@ except ImportError:
 """
 
 def fetch_stock_data(symbol: str, period: str = "1mo") -> pd.DataFrame:
-    """Download recent stock prices for the given symbol.
-
-    If the request fails or returns no data, a SystemExit exception is raised
-    with an informative error message.
-    """
+    """Download recent stock prices for the given symbol."""
     try:
-        ticker = yf.Ticker(symbol)
+        tickers = yf.Tickers(symbol)
+        ticker = tickers.tickers.get(symbol)
+        if ticker is None:
+            raise ValueError(f"Symbol '{symbol}' not recognized")
         df = ticker.history(period=period)
     except Exception as exc:  # covers network issues and invalid symbols
         raise SystemExit(
             f"Failed to get ticker '{symbol}' reason: {exc}"
-        ) from exc
+        )
 
     if df.empty:
         raise SystemExit(
             f"{symbol}: No price data found, symbol may be delisted (period={period})"
+            " or network unavailable"
         )
 
     return df
@@ -46,7 +47,16 @@ def plot_series(series: pd.Series, ma_series: pd.Series, symbol: str, window: in
     plt.savefig("stock_moving_average.png")
 
 
-def main(symbol: str = "AAPL", window: int = 7, period: str = "1mo") -> None:
+def parse_args() -> argparse.Namespace:
+    """Parse command-line options."""
+    parser = argparse.ArgumentParser(description="Plot stock closing prices and forecast next value")
+    parser.add_argument("symbol", nargs="?", default="MSFT", help="Stock ticker symbol")
+    parser.add_argument("--period", default="1mo", help="Period to download, e.g. 1mo or 3mo")
+    parser.add_argument("--window", type=int, default=7, help="Moving average window")
+    return parser.parse_args()
+
+
+def main(symbol: str = "MSFT", window: int = 7, period: str = "1mo") -> None:
     df = fetch_stock_data(symbol, period=period)
 
     close_series = df["Close"]
@@ -61,4 +71,5 @@ def main(symbol: str = "AAPL", window: int = 7, period: str = "1mo") -> None:
 
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    main(args.symbol, window=args.window, period=args.period)
