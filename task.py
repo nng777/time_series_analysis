@@ -8,10 +8,6 @@ def fetch_time_series(
     symbol: str, start: str | None = None, end: str | None = None
 ) -> pd.Series:
     """Download a daily stock price time series for ``symbol`` from Yahoo Finance.
-
-    ``yfinance`` changed the default of ``auto_adjust`` to ``True`` which adjusts
-    prices for dividends and splits. Explicitly setting ``auto_adjust`` avoids a
-    future warning and makes the behaviour clear.
     """
     data = yf.download(
         symbol,
@@ -34,7 +30,7 @@ def forecast_next(series: pd.Series, window: int) -> float:
 
 
 def main() -> None:
-    symbol = "XRP-USD"  # tickers
+    symbol = "XRP-USD"  # Tickers
     start_date = "2025-01-07" # yyyy-dd-mm
 
     time_series = fetch_time_series(symbol, start=start_date)
