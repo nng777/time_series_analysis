@@ -31,7 +31,7 @@ def forecast_next(series: pd.Series, window: int) -> float:
 
 def main() -> None:
     symbol = "XRP-USD"  # Tickers
-    start_date = "2025-01-07" # yyyy-dd-mm
+    start_date = "2025-20-07" # yyyy-dd-mm
 
     time_series = fetch_time_series(symbol, start=start_date)
 
@@ -53,8 +53,8 @@ def main() -> None:
     window_size = 7
     ma_series = moving_average(time_series, window_size)
     plt.figure(figsize=(12, 6))
-    time_series.plot(label="Stock Price")
-    ma_series.plot(label=f"{window_size}-Day Moving Average", linestyle="--")
+    plt.plot(time_series, label='Stock Price')
+    plt.plot(ma_series, label=f'{window_size}-Day Moving Average', linestyle='--')
     ax = plt.gca()
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%m-%y"))
     plt.title(f"{symbol} Stock Price with {window_size}-Day Moving Average")
