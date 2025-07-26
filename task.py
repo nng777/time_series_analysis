@@ -2,7 +2,7 @@
 Objective: Apply understanding of time series data by finding a real-world dataset, visualizing it, and calculating a moving average to make a simple forecast.
 
 Instructions:
-1.Find a Time Series Dataset: Find a simple time series dataset online from Daily stock prices of a company (e.g., from Yahoo Finance).
+1.Find a Time Series Dataset: Find a simple time series dataset(RECENT or REAL TIME) online from Daily stock prices of a company (e.g., from Yahoo Finance).
 
 2.Load and Plot the Data:
 2.1.Load the data into a Pandas DataFrame.
