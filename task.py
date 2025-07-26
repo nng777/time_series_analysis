@@ -33,8 +33,8 @@ def forecast_next(series: pd.Series, window: int) -> float:
 
 
 def main() -> None:
-    symbol = "AAPL"  # Apple Inc.
-    start_date = "2023-01-01"
+    symbol = "XRP-USD"  # tickers
+    start_date = "2025-01-01"
 
     time_series = fetch_time_series(symbol, start=start_date)
 
@@ -46,7 +46,7 @@ def main() -> None:
     plt.ylabel("Price (USD)")
     plt.legend()
     plt.grid(True)
-    plt.savefig("aapl_stock_prices.png")
+    plt.savefig("stock_prices.png")
     #plt.show()
 
     # Calculate and plot a 7-day moving average
@@ -60,7 +60,7 @@ def main() -> None:
     plt.ylabel("Price (USD)")
     plt.legend()
     plt.grid(True)
-    plt.savefig("aapl_moving_average.png")
+    plt.savefig("moving_average.png")
     #plt.show()
 
     # Forecast the next value
