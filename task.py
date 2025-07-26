@@ -1,20 +1,64 @@
-"""Time Series Analysis Practice
-Objective: Apply understanding of time series data by finding a real-world dataset, visualizing it, and calculating a moving average to make a simple forecast.
+import pandas as pd
+import matplotlib.pyplot as plt
+import yfinance as yf
 
-Instructions:
-1.Find a Time Series Dataset: Find a simple time series dataset(RECENT or REAL TIME) online from Daily stock prices of a company (e.g., from Yahoo Finance).
+"""try:
+    import yfinance as yf
+except ImportError:
+    raise SystemExit(
+        "The 'yfinance' package is required to run this script. Install it via pip"
+    )
+"""
 
-2.Load and Plot the Data:
-2.1.Load the data into a Pandas DataFrame.
-2.2.Create a line plot of the data to visualize the time series. Label your axes.
+def fetch_stock_data(symbol: str, period: str = "1mo") -> pd.DataFrame:
+    """Download recent stock prices for the given symbol.
 
-3.Calculate a Moving Average:
-3.1.Choose a window size for your moving average (e.g., 7 days for daily data).
-3.2.Calculate the moving average for the dataset.
+    If the request fails or returns no data, a SystemExit exception is raised
+    with an informative error message.
+    """
+    try:
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(period=period)
+    except Exception as exc:  # covers network issues and invalid symbols
+        raise SystemExit(
+            f"Failed to get ticker '{symbol}' reason: {exc}"
+        ) from exc
 
-4.Forecast the Next Value:
-4.1.Use the last n data points (where n is your window size) to predict the next value in the series.
+    if df.empty:
+        raise SystemExit(
+            f"{symbol}: No price data found, symbol may be delisted (period={period})"
+        )
 
-Deliverables:
-1.Create a Python script that completes the tasks above.
-2.Create a short explanation and conclusion of the findings."""
+    return df
+
+
+def plot_series(series: pd.Series, ma_series: pd.Series, symbol: str, window: int) -> None:
+    """Plot the original series and moving average."""
+    plt.figure(figsize=(12, 6))
+    plt.plot(series, label="Close Price")
+    plt.plot(ma_series, label=f"{window}-Day MA", linestyle="--")
+    plt.title(f"{symbol} Closing Prices")
+    plt.xlabel("Date")
+    plt.ylabel("Price (USD)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("stock_moving_average.png")
+
+
+def main(symbol: str = "AAPL", window: int = 7, period: str = "1mo") -> None:
+    df = fetch_stock_data(symbol, period=period)
+
+    close_series = df["Close"]
+    ma_series = close_series.rolling(window=window).mean()
+
+    plot_series(close_series, ma_series, symbol, window)
+
+    forecast = close_series.tail(window).mean()
+    print("--- Forecasting ---")
+    print(close_series.tail(window))
+    print(f"\nPredicted next closing price for {symbol}: {forecast:.2f} USD")
+
+
+if __name__ == "__main__":
+    main()
